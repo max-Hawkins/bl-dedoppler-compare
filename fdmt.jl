@@ -1,3 +1,0 @@
-using Plots
-using FastDMTransform
-using BenchmarkTools
