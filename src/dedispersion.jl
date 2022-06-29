@@ -69,7 +69,7 @@ if save_plots
                             title="pyfdmt Output",
                             ylabel="DM",
                             xlabel="Time of Arrival (High Freq)",
-                            yflip=true)
+                            yflip=false)
     savefig(pyfdmt_plot, "./reports/pyfdmt_plot.png")
 end
 
@@ -105,10 +105,11 @@ end
 fdmt_jl_out = fdmt(pulse,f_max,f_min,t_samp,dm_min,dm_max)
 
 if save_plots
-    fdmt_jl_plot = heatmap(rotl90(fdmt_jl_out),
+    fdmt_jl_plot = heatmap(rotl90(fdmt_jl_out)[end:-1:1, :],
                             title="FastDMTransform.jl CPU Output",
                             ylabel="DM",
-                            xlabel="Time of Arrival (High Freq)")
+                            xlabel="Time of Arrival (High Freq)",
+                            yflip=false)
     savefig(fdmt_jl_plot, "./reports/fdmt_jl_plot.png")
 end
 
@@ -139,7 +140,7 @@ plan = plan_dedisp(range(f_max,stop=f_min,length=4096),f_max,range(0,stop=dm_max
 dedisp_cpu_out = Dedisp.dedisp(pulse,plan)
 
 if save_plots
-    dedisp_cpu_plot = heatmap(rotl90(dedisp_cpu_out),
+    dedisp_cpu_plot = heatmap(rotl90(dedisp_cpu_out)[end:-1:1,:],
                             title="Dedisp.jl CPU Output",
                             ylabel="DM",
                             xlabel="Time of Arrival (High Freq)",
@@ -181,7 +182,7 @@ pulse_cu = cu(pulse)
 CUDA.@sync dedisp!(dedisp_gpu_out,pulse_cu,plan_cu)
 
 if save_plots
-    dedisp_gpu_plot = heatmap(rotl90(Array(dedisp_gpu_out)),
+    dedisp_gpu_plot = heatmap(rotl90(Array(dedisp_gpu_out))[end:-1:1,:],
                             title="Dedisp.jl GPU Output",
                             ylabel="DM",
                             xlabel="Time of Arrival (High Freq)",
@@ -191,12 +192,23 @@ end
 
 dedisp_gpu_times = bench_dedisp_gpu(pulse, 10)
 
-# Save times to file for later processing
-# TODO: Don't. Do post-processing inline here
-save("./bench_times.jld",
-    "pyfdmt", pyfdmt_times,
-    "fdmt", fdmt_times,
-    "dedisp_cpu", dedisp_cpu_times,
-    "dedisp_gpu", dedisp_gpu_times)
+# Generate runtime comparison plot
+using StatsPlots
 
-println("Done!")
+labels = repeat(["FDMT Python", "FDMT Julia", "Dedisp CPU", "Dedisp GPU"], outer = 2)
+grouped_times = [mean(pyfdmt_times)     reduce(min,pyfdmt_times);
+                 mean(fdmt_times)       reduce(min,fdmt_times);
+                 mean(dedisp_cpu_times) reduce(min,dedisp_cpu_times);
+                 mean(dedisp_gpu_times) reduce(min,dedisp_gpu_times)]
+ctg = repeat(["Mean", "Min"], inner = 4)
+
+if save_plots
+    runtime_plot = groupedbar(labels,
+                            grouped_times,
+                            yaxis=(:log10, (0.01,120)),
+                            group=ctg,
+                            ylabel="Runtime in Seconds",
+                            xlabel="Implementation",
+                            title="Dedispersion Runtime Comparison")
+    savefig(runtime_plot, "./reports/dedisp_runtimes_plot.png")
+end
