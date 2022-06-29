@@ -13,6 +13,7 @@ using JLD
 
 # Import necessary python packages (will need to have previously setup with Conda(.jl))
 pyfdmt = pyimport("pyfdmt")
+# bf     = pyimport("bifrost")
 np     = pyimport("numpy")
 
 # Helper display function
@@ -34,8 +35,20 @@ t_samp  = 1e-3
 dm_min  = 0
 dm_max  = 2000
 
-save_plots = true
+save_plots = false
 
+if save_plots
+    dispersed_pulse_plot = heatmap(rotl90(pulse),
+                                title="Dispersed Pulse",
+                                xlabel="Time",
+                                ylabel="Frequency")
+    savefig(dispersed_pulse_plot, "./reports/dispersed_pulse_plot.png")
+end
+
+pyfdmt_out     = nothing
+fdmt_jl_out    = nothing
+dedisp_cpu_out = nothing
+dedisp_gpu_out = nothing
 
 ### pyfdmt
 
@@ -116,6 +129,76 @@ end
 fdmt_times = bench_fdmt(pulse, 10)
 
 
+# TODO: Get bifrost asarray to interop with arrays from julia
+
+# ### Bifrost FDMT GPU
+# println("\nGenerating Bifrost FDMT GPU Output...")
+
+
+# function fdmt_gpu_bench(pulse, f_max, f_min, dt, max_dm, exponent, n_iters)
+#     (ntime, nchan) =  (3000, 4096)
+#     println("Shape: $(size(pulse))")
+#     bw = f_max - f_min
+#     df = bw / nchan
+
+#     # Calculate max delay from max dm
+#     rel_delay = (4.148741601e3 / dt * max_dm * (f_min^-2 - (f_min + nchan * df)^-2))
+#     max_delay = Int(ceil(abs(rel_delay)))
+
+#     fdmt = bf.fdmt.Fdmt()
+#     fdmt.init(nchan, max_delay, f_min, df, exponent, "cuda")
+
+#     ishape = (nchan, ntime)
+#     oshape = (max_delay, ntime)
+
+#     println("Max delay; $max_delay")
+
+#     # Random input
+#     in_data = bf.asarray(pulse, space="cuda")
+#     # Pre-allocate output
+#     out_data = bf.asarray(np.ones(oshape, np.float32),
+#                         space="cuda")
+
+#     # Warmup
+#     fdmt.execute(in_data, out_data)
+
+#     times = zeros(Float32, n_iters)
+#     for i in 1:n_iters
+#         stats = @timed CUDA.@sync fdmt.execute(in_data, out_data)
+#         times[i] = stats.time
+#     end
+
+#     out_data = out_data.copy("system")
+
+#     disp_times(times)
+#     return (times, out_data)
+# end
+
+# # Load the data
+# # Transpose is necessary because otherwise numpy treats the data as transposed from what we
+# # want but with column-major storage. Transpose doesn't change actual memory layout but
+# # rather how numpy treats the data.
+# pulse_fdmt_gpu = np.transpose(np.load("./dispersed_pulse.npz"))
+
+
+# (fdmt_gpu_times, fdmt_gpu_out) = fdmt_gpu_bench(transpose(pulse),
+#                                                 f_min,
+#                                                 f_max,
+#                                                 t_samp,
+#                                                 dm_max,
+#                                                 -2.0,
+#                                                 100)
+
+# if save_plots
+#     fdmt_gpu_plot = heatmap(rotl90(fdmt_gpu_out)[end:-1:1,:],
+#                             title="FDMT GPU Output",
+#                             ylabel="DM",
+#                             xlabel="Time of Arrival (High Freq)",
+#                             yflip=false)
+#     savefig(fdmt_gpu_plot, "./reports/fdmt_gpu_plot.png")
+# end
+
+
 ### Dedisp CPU
 
 println("\nGenerating Dedisp CPU output...")
@@ -192,20 +275,38 @@ end
 
 dedisp_gpu_times = bench_dedisp_gpu(pulse, 10)
 
+
+println("Saving times and algorithm outputs for later comparisons...")
+
+# Save times to file for later processing
+save("./reports/data/bench_times.jld",
+    "pyfdmt", pyfdmt_times,
+    "fdmt", fdmt_times,
+    "dedisp_cpu", dedisp_cpu_times,
+    "dedisp_gpu", dedisp_gpu_times)
+
+save("./reports/data/dedisp_outputs.jld",
+    "pyfdmt", pyfdmt_out,
+    "fdmt", fdmt_jl_out,
+    "dedisp_cpu", dedisp_cpu_out,
+    "dedisp_gpu", dedisp_gpu_out)
+
+
 # Generate runtime comparison plot
 using StatsPlots
 
-labels = repeat(["FDMT Python", "FDMT Julia", "Dedisp CPU", "Dedisp GPU"], outer = 2)
+labels = repeat(["FDMT Python", "FDMT Julia", "FDMT GPU", "Dedisp CPU", "Dedisp GPU"], outer = 2)
 grouped_times = [mean(pyfdmt_times)     reduce(min,pyfdmt_times);
                  mean(fdmt_times)       reduce(min,fdmt_times);
+                #  mean(fdmt_gpu_times)   reduce(min,fdmt_gpu_times);
                  mean(dedisp_cpu_times) reduce(min,dedisp_cpu_times);
                  mean(dedisp_gpu_times) reduce(min,dedisp_gpu_times)]
-ctg = repeat(["Mean", "Min"], inner = 4)
+ctg = repeat(["Mean", "Min"], inner = 5)
 
 if save_plots
     runtime_plot = groupedbar(labels,
                             grouped_times,
-                            yaxis=(:log10, (0.01,120)),
+                            yaxis=(:log10, (0.001,120)),
                             group=ctg,
                             ylabel="Runtime in Seconds",
                             xlabel="Implementation",
