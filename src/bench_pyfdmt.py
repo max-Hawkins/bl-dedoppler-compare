@@ -23,7 +23,7 @@ t_samp  = 1e-3
 dm_min  = 0
 dm_max  = 2000
 
-pulse = np.load("/home/mhawkins/.julia/packages/FastDMTransform/wpJW3/pulse.npz")
+pulse = np.load("../dispersed_pulse.npz")
 
 (times_pyfdmt, out) = bench_pyfdmt(pulse, f_max, f_min, t_samp, dm_min, dm_max, n_iters)
 
