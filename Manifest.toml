@@ -244,9 +244,9 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
 [[Dedisp]]
 deps = ["CUDA", "LLVM", "LoopVectorization", "Statistics"]
-git-tree-sha1 = "271ae0a590598428540024f95efc6ebcca1a9e71"
+git-tree-sha1 = "e2f5f62f828a4d9f388930a30331da54d855e4b8"
 repo-rev = "main"
-repo-url = "https://github.com/kiranshila/Dedisp.jl.git"
+repo-url = "https://github.com/max-Hawkins/Dedisp.jl"
 uuid = "7bc0bc3a-6b35-4b25-97f3-85089611dfa9"
 version = "0.1.0"
 

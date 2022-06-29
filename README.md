@@ -60,11 +60,13 @@ fair comparison to pyfdmt.
 
 ### CPU Brute-Force Dedispersion in Julia (Dedisp.jl)
 
-Codebase: https://github.com/kiranshila/Dedisp.jl
+Codebase: https://github.com/max-Hawkins/Dedisp.jl
+Note: This fork is used to remove the loop vectorization helper to make a more fair comparison.
 
 ### GPU Brute-Force Dedispersion in Julia (Dedisp.jl)
 
-Codebase: https://github.com/kiranshila/Dedisp.jl
+Codebase: https://github.com/max-Hawkins/Dedisp.jl
+Note: This fork is used to remove the normalization step after dedispersion.
 
 ### GPU Brute-Force Dedispersion in C/C++ (Dedisp library)
 
