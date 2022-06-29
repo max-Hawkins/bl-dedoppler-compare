@@ -54,7 +54,9 @@ Codebase: https://github.com/ledatelescope/bifrost
 
 ### CPU FDMT in Julia (FastDMTransform.jl)
 
-Codebase: https://github.zjystudio.com/kiranshila/FastDMTransform.jl
+Codebase: https://github.com/max-Hawkins/FastDMTransform.jl
+Note: This fork is used to test against a single-threaded FDMT implementation that's a more
+fair comparison to pyfdmt.
 
 ### CPU Brute-Force Dedispersion in Julia (Dedisp.jl)
 
