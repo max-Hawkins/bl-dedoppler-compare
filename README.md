@@ -21,7 +21,7 @@ DeDispersion Algorithms:
 
 ## Summary:
 
-TODO
+See dedispersion_runtime_comparison.pdf
 
 
 ## Methodology
