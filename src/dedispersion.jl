@@ -1,5 +1,6 @@
 ENV["PLOTS_TEST"] = "true"
 ENV["GKSwstype"] = "100"
+println("PWD: $(pwd())")
 
 using Pkg
 Pkg.activate(".")
@@ -86,7 +87,7 @@ if save_plots
     savefig(pyfdmt_plot, "./reports/pyfdmt_plot.png")
 end
 
-pyfdmt_times = bench_pyfdmt(transpose(pulse), 10)
+pyfdmt_times = bench_pyfdmt(transpose(pulse), 100)
 
 
 
@@ -126,7 +127,7 @@ if save_plots
     savefig(fdmt_jl_plot, "./reports/fdmt_jl_plot.png")
 end
 
-fdmt_times = bench_fdmt(pulse, 10)
+fdmt_times = bench_fdmt(pulse, 100)
 
 
 # TODO: Get bifrost asarray to interop with arrays from julia
@@ -273,7 +274,7 @@ if save_plots
     savefig(dedisp_gpu_plot, "./reports/dedisp_gpu_plot.png")
 end
 
-dedisp_gpu_times = bench_dedisp_gpu(pulse, 10)
+dedisp_gpu_times = bench_dedisp_gpu(pulse, 100)
 
 
 println("Saving times and algorithm outputs for later comparisons...")
@@ -286,10 +287,10 @@ save("./reports/data/bench_times.jld",
     "dedisp_gpu", dedisp_gpu_times)
 
 save("./reports/data/dedisp_outputs.jld",
-    "pyfdmt", pyfdmt_out,
+    "pyfdmt", pyfdmt_out.data,
     "fdmt", fdmt_jl_out,
     "dedisp_cpu", dedisp_cpu_out,
-    "dedisp_gpu", dedisp_gpu_out)
+    "dedisp_gpu", Array(dedisp_gpu_out))
 
 
 # Generate runtime comparison plot
